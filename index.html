@@ -76,7 +76,7 @@
 
   <div class="card" role="main" aria-labelledby="title">
     <h1 id="title">Proposta Comercial</h1>
-    <p>Baixe o modelo para construtoras — rápido e editável.</p>
+    <p>Valido apenas para construtoras.</p>
 
     <div class="form-row" style="margin-top:18px">
       <input id="email" type="email" placeholder="Seu e-mail" autocomplete="email" />
@@ -85,7 +85,7 @@
 
     <label class="consent">
       <input id="consent" type="checkbox" />
-      Aceito a coleta do meu e-mail para receber a proposta
+      Confirmação de envio de proposta comercial
     </label>
 
     <div id="msg" class="msg note" aria-live="polite">Ao enviar, você concorda com nossa política de privacidade.</div>
@@ -112,7 +112,7 @@
         const email = (emailInput.value || '').trim();
 
         if(!consentCheckbox.checked){
-          msg.textContent = 'Você precisa aceitar a coleta de e-mail.';
+          msg.textContent = 'Você precisa aceitar o envio de proposta comercial.';
           msg.style.color = '#b91c1c';
           return;
         }
