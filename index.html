@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Proposta — Construtora</title>
+
+  <style>
+    :root{--muted:#6b7280;--accent:#4f46e5}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+      background:linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.97));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    /* fundo sutil com imagem */
+    .bg-layer{
+      position:fixed;
+      inset:0;
+      background-image: url('https://images.unsplash.com/photo-1597262975002-c5c3b14bbd62?auto=format&fit=crop&w=1400&q=60');
+      background-size:cover;
+      background-position:center;
+      filter: blur(6px) saturate(80%) brightness(0.6);
+      opacity:0.22;
+      z-index:0;
+    }
+
+    .card{
+      position:relative;
+      z-index:1;
+      width:100%;
+      max-width:480px;
+      padding:28px;
+      border-radius:12px;
+      box-shadow: 0 10px 30px rgba(15,15,15,0.06);
+      background: rgba(255,255,255,0.86);
+      backdrop-filter: blur(6px);
+      text-align:center;
+    }
+
+    h1{margin:0;font-size:20px;color:#111827}
+    p{margin:6px 0 0;color:var(--muted);font-size:13px}
+
+    .form-row{margin-top:18px;display:flex;gap:10px;align-items:center;justify-content:center}
+    input[type="email"]{
+      flex:1;padding:12px 14px;border-radius:8px;border:1px solid #e6e6e6;font-size:14px;
+      min-width:0;
+    }
+    button.primary{
+      background:var(--accent);color:white;border:none;padding:11px 14px;border-radius:8px;font-weight:600;
+      cursor:pointer;
+    }
+    button.primary:disabled{opacity:0.6;cursor:not-allowed}
+
+    .consent{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px;color:var(--muted);justify-content:center}
+    .consent input{width:16px;height:16px}
+    .note{margin-top:12px;font-size:12px;color:#9ca3af}
+    .msg{margin-top:12px;font-size:13px}
+    footer{position:fixed;left:12px;bottom:12px;font-size:12px;color:#9ca3af;z-index:2}
+    @media (max-width:520px){
+      .form-row{flex-direction:column}
+      input[type="email"]{width:100%}
+      button.primary{width:100%}
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-layer" aria-hidden="true"></div>
+
+  <div class="card" role="main" aria-labelledby="title">
+    <h1 id="title">Proposta Comercial</h1>
+    <p>Baixe o modelo para construtoras — rápido e editável.</p>
+
+    <div class="form-row" style="margin-top:18px">
+      <input id="email" type="email" placeholder="Seu e-mail" autocomplete="email" />
+      <button id="btn" class="primary">Baixar PDF</button>
+    </div>
+
+    <label class="consent">
+      <input id="consent" type="checkbox" />
+      Aceito a coleta do meu e-mail para receber a proposta
+    </label>
+
+    <div id="msg" class="msg note" aria-live="polite">Ao enviar, você concorda com nossa política de privacidade.</div>
+  </div>
+
+  <footer>© <span id="year"></span> Sua Empresa</footer>
+
+  <script>
+    (function(){
+      // --------- CONFIGURE AQUI ----------
+      const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xpwygron'; // seu endpoint Formspree (já inserido)
+      const PDF_URL = 'proposta-construtora.pdf'; // <- coloque o PDF no mesmo diretório do index.html ou use URL absoluta
+      // -----------------------------------
+
+      document.getElementById('year').textContent = new Date().getFullYear();
+
+      const emailInput = document.getElementById('email');
+      const consentCheckbox = document.getElementById('consent');
+      const btn = document.getElementById('btn');
+      const msg = document.getElementById('msg');
+
+      btn.addEventListener('click', async function(){
+        msg.style.color = ''; // reset
+        const email = (emailInput.value || '').trim();
+
+        if(!consentCheckbox.checked){
+          msg.textContent = 'Você precisa aceitar a coleta de e-mail.';
+          msg.style.color = '#b91c1c';
+          return;
+        }
+        if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){
+          msg.textContent = 'Informe um e-mail válido.';
+          msg.style.color = '#b91c1c';
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Enviando...';
+        msg.textContent = 'Preparando o download...';
+
+        try{
+          const payload = {
+            email: email,
+            consent: true,
+            source: 'landing_minimal_github',
+            timestamp: new Date().toISOString()
+          };
+
+          const res = await fetch(FORMSPREE_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if(!res.ok){
+            const text = await res.text();
+            throw new Error('Falha: ' + (text || res.status));
+          }
+
+          // sucesso -> inicia download
+          msg.textContent = 'Pronto — o download começará.';
+          msg.style.color = 'green';
+
+          // inicia download (link relativo ou absoluto)
+          const a = document.createElement('a');
+          a.href = PDF_URL;
+          a.download = (PDF_URL.split('/').pop() || 'proposta.pdf');
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+
+        } catch(err){
+          console.error(err);
+          msg.textContent = 'Erro ao enviar. Tente novamente mais tarde.';
+          msg.style.color = '#b91c1c';
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Baixar PDF';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
